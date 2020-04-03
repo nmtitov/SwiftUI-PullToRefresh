@@ -21,10 +21,15 @@ Example:
 ```swift
 struct ContentView: View {
     @State var numbers:[Int] = [23,45,76,54,76,3465,24,423]
+    @State var showRefreshView: Bool = false
     
     var body: some View {
-        RefreshableNavigationView(title: "Numbers", action:{
+        RefreshableNavigationView(showRefreshView: $showRefreshView, action:{
             self.numbers = self.generateRandomNumbers()
+            // Remember to set the showRefreshView to false
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                self.showRefreshView = false
+            }
         }){
             ForEach(self.numbers, id: \.self){ number in
                 VStack(alignment: .leading){
@@ -32,6 +37,7 @@ struct ContentView: View {
                     Divider()
                 }
             }
+            .navigationBarTitle("Testing")
         }
     }
     
