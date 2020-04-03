@@ -11,21 +11,20 @@ import SwiftUI
 public struct RefreshableNavigationView<Content: View>: View {
     let content: () -> Content
     let action: () -> Void
-    @State public var showRefreshView: Bool = false
+    @Binding public var showRefreshView: Bool
     @State public var pullStatus: CGFloat = 0
-    private var title: String
 
-    public init(title:String, action: @escaping () -> Void ,@ViewBuilder content: @escaping () -> Content) {
-        self.title = title
+    public init(showRefreshView: Binding<Bool>, action: @escaping () -> Void ,@ViewBuilder content: @escaping () -> Content) {
         self.action = action
         self.content = content
+        self._showRefreshView = showRefreshView
     }
     
     public var body: some View {
         NavigationView{
             RefreshableList(showRefreshView: $showRefreshView, pullStatus: $pullStatus, action: self.action) {
                 self.content()
-            }.navigationBarTitle(title)
+            }
         }
         .offset(x: 0, y: self.showRefreshView ? 34 : 0)
         .onAppear{
@@ -63,9 +62,6 @@ public struct RefreshableList<Content: View>: View {
             self.showRefreshView = true
             DispatchQueue.main.async {
                 self.action()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                    self.showRefreshView = false
-                }
             }
             
         }
