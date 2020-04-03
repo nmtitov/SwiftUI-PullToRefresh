@@ -52,6 +52,7 @@ struct ContentView: View {
 
 ## Support Inline Navigation Bar
 Change the displayMode to .inline if you want to display the list like below.
+
 ![Inline](inline.gif)
 
 ```swift
