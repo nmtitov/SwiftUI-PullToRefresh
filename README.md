@@ -19,36 +19,39 @@ You need to add `RefreshableNavigationView(title: String, action: () -> Void, co
 Example: 
 
 ```swift
-struct ContentView: View {
-    @State var numbers:[Int] = [23,45,76,54,76,3465,24,423]
-    @State var showRefreshView: Bool = false
-    
-    var body: some View {
-        RefreshableNavigationView(showRefreshView: $showRefreshView, action:{
-            self.numbers = self.generateRandomNumbers()
-            // Remember to set the showRefreshView to false
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                self.showRefreshView = false
-            }
-        }){
-            ForEach(self.numbers, id: \.self){ number in
-                VStack(alignment: .leading){
-                    Text("\(number)")
-                    Divider()
-                }
-            }
-            .navigationBarTitle("Testing")
-        }
+RefreshableNavigationView(title: "Testing", showRefreshView: $showRefreshView, action:{
+    self.numbers = self.generateRandomNumbers()
+    // Remember to set the showRefreshView to false
+    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+        self.showRefreshView = false
     }
-    
-    func generateRandomNumbers() -> [Int] {
-        var sequence = [Int]()
-        for _ in 0...30 {
-            sequence.append(Int.random(in: 0 ..< 100))
+}){
+    ForEach(self.numbers, id: \.self){ number in
+        VStack(alignment: .leading){
+            Text("\(number)")
+            Divider()
         }
-        return sequence
     }
 }
 ```
 
+## Support Inline Navigation Bar
+Change the displayMode to .inline if you want to display the list like below.
+![Inline](inline.gif)
 
+```swift
+RefreshableNavigationView(title: "Testing", showRefreshView: $showRefreshView, displayMode: .inline, action:{
+    self.numbers = self.generateRandomNumbers()
+    // Remember to set the showRefreshView to false
+    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+        self.showRefreshView = false
+    }
+}){
+    ForEach(self.numbers, id: \.self){ number in
+        VStack(alignment: .leading){
+            Text("\(number)")
+            Divider()
+        }
+    }
+}
+```
