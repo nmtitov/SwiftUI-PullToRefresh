@@ -29,7 +29,7 @@ public struct RefreshableNavigationView<Content: View>: View {
     
     public var body: some View {
         NavigationView {
-            RefreshableList(showRefreshView: $showRefreshView, pullStatus: $pullStatus, displayMode: self.displayMode, action: self.action) {
+            RefreshableList(showRefreshView: $showRefreshView, displayMode: self.displayMode, action: self.action) {
                 self.content()
             }
             .navigationBarTitle("\(self.title)", displayMode: self.displayMode == .large ? .large : .inline)
@@ -42,7 +42,7 @@ public struct RefreshableNavigationView<Content: View>: View {
 
 public struct RefreshableList<Content: View>: View {
     @Binding var showRefreshView: Bool
-    @Binding var pullStatus: CGFloat
+    @State var pullStatus: CGFloat = 0.0
     let action: () -> Void
     let content: () -> Content
     let displayMode: NavigationDisplayMode
@@ -52,12 +52,13 @@ public struct RefreshableList<Content: View>: View {
     @State private var scrollOffset: CGFloat = 0
     @State private var frozen: Bool = false
     
-    init(showRefreshView: Binding<Bool>, pullStatus: Binding<CGFloat>, displayMode: NavigationDisplayMode = .inline, action: @escaping () -> Void, @ViewBuilder content: @escaping () -> Content) {
+    public init(showRefreshView: Binding<Bool>, displayMode: NavigationDisplayMode = .inline, action: @escaping () -> Void, @ViewBuilder content: @escaping () -> Content) {
         self._showRefreshView = showRefreshView
-        self._pullStatus = pullStatus
         self.action = action
         self.content = content
         self.displayMode = displayMode
+        
+        UITableView.appearance().separatorColor = .clear
     }
     
     public var body: some View {
