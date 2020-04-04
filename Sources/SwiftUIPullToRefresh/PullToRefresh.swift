@@ -34,7 +34,6 @@ public struct RefreshableNavigationView<Content: View>: View {
             }
             .navigationBarTitle("\(self.title)", displayMode: self.displayMode == .large ? .large : .inline)
         }
-        .offset(x: 0, y: self.showRefreshView ? self.offsetY : 0)
         .onAppear{
             UITableView.appearance().separatorColor = .clear
         }
@@ -47,11 +46,11 @@ public struct RefreshableList<Content: View>: View {
     let action: () -> Void
     let content: () -> Content
     let displayMode: NavigationDisplayMode
-    var threshold: CGFloat {displayMode == .large ? 186 : 100 }
+    var threshold: CGFloat = 100.0
     
-    var listOffSetY: CGFloat {
-        self.displayMode == .large ? -40 : self.showRefreshView ? 0 : -70
-    }
+    @State private var previousScrollOffset: CGFloat = 0
+    @State private var scrollOffset: CGFloat = 0
+    @State private var frozen: Bool = false
     
     init(showRefreshView: Binding<Bool>, pullStatus: Binding<CGFloat>, displayMode: NavigationDisplayMode = .inline, action: @escaping () -> Void, @ViewBuilder content: @escaping () -> Content) {
         self._showRefreshView = showRefreshView
@@ -62,25 +61,54 @@ public struct RefreshableList<Content: View>: View {
     }
     
     public var body: some View {
-        List{
-            PullToRefreshView(showRefreshView: $showRefreshView, pullStatus: $pullStatus, displayMode: self.displayMode)
-            content()
+       
+        ZStack(alignment: .top) {
+            List{
+                MovingView()
+                if self.showRefreshView && self.frozen && self.displayMode == .inline {
+                    EmptyRow()
+                }
+                content()
+            }
+            .background(FixedView())
+            .environment(\.defaultMinListRowHeight, 0)
+            .onPreferenceChange(RefreshableKeyTypes.PrefKey.self) { values in
+                self.refreshLogic(values: values)
+            }
+            PullToRefreshView(showRefreshView: $showRefreshView, pullStatus: $pullStatus)
+                .offset(y: self.displayMode == .large ? -90 : 0)
         }
-        .onPreferenceChange(RefreshableKeyTypes.PrefKey.self) { values in
-            guard let bounds = values.first?.bounds else { return }
-            self.pullStatus = CGFloat((bounds.origin.y - (self.displayMode == .large ? 106 : 24)) / 80)
-            self.refresh(offset: bounds.origin.y)
-        }
-        .offset(y: self.listOffSetY)
+            
     }
     
-    func refresh(offset: CGFloat) {
-        if(offset > self.threshold && self.showRefreshView == false) {
-            self.showRefreshView = true
-            DispatchQueue.main.async {
+    func refreshLogic(values: [RefreshableKeyTypes.PrefData]) {
+        DispatchQueue.main.async {
+            // Calculate scroll offset
+            let movingBounds = values.first { $0.vType == .movingView }?.bounds ?? .zero
+            let fixedBounds = values.first { $0.vType == .fixedView }?.bounds ?? .zero
+            
+            // 6 is the list top padding
+            self.scrollOffset  = movingBounds.minY - fixedBounds.minY - 6
+            self.pullStatus = self.scrollOffset / 100
+            
+            // Crossing the threshold on the way down, we start the refresh process
+            if !self.showRefreshView && (self.scrollOffset > self.threshold && self.previousScrollOffset <= self.threshold) {
+                self.showRefreshView = true
                 self.action()
             }
             
+            if self.showRefreshView {
+                // Crossing the threshold on the way up, we add a space at the top of the scrollview
+                if self.previousScrollOffset > self.threshold && self.scrollOffset <= self.threshold {
+                    self.frozen = true
+                }
+            } else {
+                // remove the first empty row inside the list view.
+                self.frozen = false
+            }
+            
+            // Update last scroll offset
+            self.previousScrollOffset = self.scrollOffset
         }
     }
 }
@@ -107,36 +135,50 @@ struct Spinner: View {
 struct RefreshView: View {
     @Binding var isRefreshing:Bool
     @Binding var status: CGFloat
+    @State var scale: CGFloat = 1.0
     var body: some View {
-        HStack{
-            Spacer()
-            VStack(alignment: .center){
-                if (!isRefreshing) {
-                    Spinner(percentage: $status)
-                }else{
-                    ActivityIndicator(isAnimating: .constant(true), style: .large)
-                }
-                Text(isRefreshing ? "Loading" : "Pull to refresh").font(.caption)
+        ZStack{
+            if (!isRefreshing) {
+                Spinner(percentage: $status)
+            }else{
+                ActivityIndicator(isAnimating: .constant(true), style: .large)//                        .scaleEffect(self.scale)
             }
-            Spacer()
         }
+        .frame(height: 60)
+    }
+}
+
+struct EmptyRow: View {
+    var body: some View {
+        Color.clear
+            .frame(height: 60)
     }
 }
 
 struct PullToRefreshView: View {
     @Binding var showRefreshView: Bool
     @Binding var pullStatus: CGFloat
-    var displayMode: NavigationDisplayMode = .large
     
     var body: some View {
-        GeometryReader{ geometry in
-                RefreshView(isRefreshing: self.$showRefreshView, status: self.$pullStatus)
-                    .opacity(Double((geometry.frame(in: CoordinateSpace.global).origin.y - (self.displayMode == .large ? 106 : 24)) / 80))
-                    .preference(key: RefreshableKeyTypes.PrefKey.self, value: [RefreshableKeyTypes.PrefData(bounds: geometry.frame(in: CoordinateSpace.global))])
-                    .offset(y: self.displayMode == .large ? -90 : 0)
+        RefreshView(isRefreshing: self.$showRefreshView, status: self.$pullStatus)
+    }
+}
+
+struct FixedView: View {
+    var body: some View {
+        GeometryReader { proxy in
+            Color
+                .clear
+                .preference(key: RefreshableKeyTypes.PrefKey.self, value: [RefreshableKeyTypes.PrefData(vType: .fixedView, bounds: proxy.frame(in: .global))])
         }
-        .frame(height: self.displayMode == .large ? 40 : 70)
-        
+    }
+}
+
+struct MovingView: View {
+    var body: some View {
+        GeometryReader { proxy in
+            Color.clear.preference(key: RefreshableKeyTypes.PrefKey.self, value: [RefreshableKeyTypes.PrefData(vType: .movingView, bounds: proxy.frame(in: .global))])
+        }.frame(height: 0)
     }
 }
 
@@ -155,8 +197,13 @@ struct ActivityIndicator: UIViewRepresentable {
 }
 
 struct RefreshableKeyTypes {
+    enum ViewType: Int {
+        case movingView
+        case fixedView
+    }
     
     struct PrefData: Equatable {
+        let vType: ViewType
         let bounds: CGRect
     }
 
