@@ -94,7 +94,9 @@ public struct RefreshableList<Content: View>: View {
             // Crossing the threshold on the way down, we start the refresh process
             if !self.showRefreshView && (self.scrollOffset > self.threshold && self.previousScrollOffset <= self.threshold) {
                 self.showRefreshView = true
-                self.action()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                     self.action()
+                }
             }
             
             if self.showRefreshView {
