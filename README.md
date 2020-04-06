@@ -129,3 +129,12 @@ NavigationView {
     .navigationBarTitle("Testing", displayMode: .inline)
 }
 ```
+
+## Perform an action when scrolling to the last row
+Sometimes, you prefer to perform an action when scrolling to the last row e.g. loading more data. You can do that by adding the following function
+
+```swift
+.onLastPerform {
+// add your method here
+}
+```
