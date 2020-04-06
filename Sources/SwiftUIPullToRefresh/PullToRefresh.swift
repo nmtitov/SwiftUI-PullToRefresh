@@ -155,7 +155,7 @@ struct RefreshView: View {
                 Spinner(percentage: $status)
             }
             ActivityIndicator(isAnimating: .constant(true), style: .large)
-                .scaleEffect(self.isRefreshing ? 1 : 0)
+                .scaleEffect(self.isRefreshing ? 1 : 0.1)
                 .animation(self.isRefreshing ? nil : .easeInOut)
         }
         .frame(height: 60)
