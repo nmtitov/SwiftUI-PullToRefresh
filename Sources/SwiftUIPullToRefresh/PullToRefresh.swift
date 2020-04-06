@@ -143,9 +143,10 @@ struct RefreshView: View {
         ZStack{
             if (!isRefreshing) {
                 Spinner(percentage: $status)
-            }else{
-                ActivityIndicator(isAnimating: .constant(true), style: .large)//                        .scaleEffect(self.scale)
             }
+            ActivityIndicator(isAnimating: .constant(true), style: .large)
+                .scaleEffect(self.isRefreshing ? 1 : 0)
+                .animation(self.isRefreshing ? nil : .easeInOut)
         }
         .frame(height: 60)
     }
