@@ -138,3 +138,23 @@ Sometimes, you prefer to perform an action when scrolling to the last row e.g. l
 // add your method here
 }
 ```
+Here is an example.
+```swift
+RefreshableList(showRefreshView: $showRefreshView, action:{
+    self.numbers = self.generateRandomNumbers()
+    // Remember to set the showRefreshView to false
+    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+        self.showRefreshView = false
+    }
+}){
+    ForEach(self.numbers, id: \.self){ number in
+        VStack(alignment: .leading){
+            Text("\(number)")
+            Divider()
+        }
+    }
+}
+.onLastPerform {
+    // Add your method here.
+}
+```
