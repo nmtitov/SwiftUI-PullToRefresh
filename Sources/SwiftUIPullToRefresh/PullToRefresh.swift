@@ -156,6 +156,7 @@ struct RefreshView: View {
             }
             ActivityIndicator(isAnimating: .constant(true), style: .large)
                 .scaleEffect(self.isRefreshing ? 1 : 0.1)
+                .opacity(self.isRefreshing ? 1 : 0)
                 .animation(self.isRefreshing ? nil : .easeInOut)
         }
         .frame(height: 60)
