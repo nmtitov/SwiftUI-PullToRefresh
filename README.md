@@ -108,3 +108,24 @@ struct ContentView: View {
     }
 }
 ```
+
+## Use with NavigationView
+The RefreshableList can be embeded in the NavigationView.
+
+```swift
+NavigationView {
+    RefreshableList(showRefreshView: $showRefreshView, action:{
+        // your refresh code
+        // Remember to set the showRefreshView to false
+        self.showRefreshView = false
+    }){
+        ForEach(self.numbers, id: \.self){ number in
+            VStack(alignment: .leading){
+                Text("\(number)")
+                Divider()
+            }
+        }
+    }
+    .navigationBarTitle("Testing", displayMode: .inline)
+}
+```
