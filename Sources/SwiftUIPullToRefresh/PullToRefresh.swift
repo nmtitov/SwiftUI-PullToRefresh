@@ -51,6 +51,7 @@ public struct RefreshableList<Content: View>: View {
     @State private var previousScrollOffset: CGFloat = 0
     @State private var scrollOffset: CGFloat = 0
     @State private var frozen: Bool = false
+    @ObservedObject var obAction: ObservableAction = ObservableAction(onLast: nil)
     
     public init(showRefreshView: Binding<Bool>, displayMode: NavigationDisplayMode = .inline, action: @escaping () -> Void, @ViewBuilder content: @escaping () -> Content) {
         self._showRefreshView = showRefreshView
@@ -70,6 +71,14 @@ public struct RefreshableList<Content: View>: View {
                     EmptyRow()
                 }
                 content()
+                
+                Color
+                    .clear
+                    .frame(height: 0)
+                    .onAppear {
+                        // only perform the action when scrolling.
+                        if self.scrollOffset < 0 { self.obAction.onLast?() }
+                }
             }
             .background(FixedView())
             .environment(\.defaultMinListRowHeight, 0)
@@ -222,13 +231,27 @@ struct RefreshableKeyTypes {
     }
 }
 
-struct Spinner_Previews: PreviewProvider {
-    static var previews: some View {
-        Spinner(percentage: .constant(1))
-    }
-}
-
 public enum NavigationDisplayMode {
     case inline
     case large
+}
+
+extension RefreshableList {
+    public func onLastPerform(_ action: @escaping () -> Void) -> some View {
+        self.obAction.onLast = action
+        return overlay(
+            Color
+                .clear
+                .frame(width: 0, height: 0)
+        )
+    }
+
+}
+
+class ObservableAction: ObservableObject {
+    var onLast: (()-> Void)?
+    
+    init(onLast: (()->Void)? = nil) {
+        self.onLast = onLast
+    }
 }
