@@ -73,6 +73,8 @@ RefreshableNavigationView(title: "Testing", showRefreshView: $showRefreshView, d
 ```
 
 ## Use without NavigationView
+In some cases, you want to add the pull to refresh to the List without the NavigationView. Here you go. Just need to add the RefreshableList like below. Make sure to set the displayMode = .inline. The .large does not work without the NavigationView.
+
 
 ```swift
 struct ContentView: View {
