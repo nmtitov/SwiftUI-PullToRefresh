@@ -82,7 +82,7 @@ struct ContentView: View {
     @State var showRefreshView: Bool = false
     
     var body: some View {
-        RefreshableList(showRefreshView: $showRefreshView, displayMode: .inline, action:{
+        RefreshableList(showRefreshView: $showRefreshView, action:{
                     self.numbers = self.generateRandomNumbers()
                     // Remember to set the showRefreshView to false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
